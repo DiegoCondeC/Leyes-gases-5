@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Físico-Químico: Teoría Cinética, Leyes de los Gases y Fases</title>
+<style>
+  :root {
+    --bg-main: #070b14;
+    --bg-card: #111827;
+    --bg-panel: #1e293b;
+    --accent: #38bdf8;
+    --accent-orange: #f97316;
+    --accent-green: #10b981;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: rgba(17, 24, 39, 0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .logo-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .nav-bar {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--bg-main);
+    padding: 0.35rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .nav-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    padding: 0.6rem 1.1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-btn:hover {
+    color: var(--text-primary);
+  }
+
+  .nav-btn.active {
+    background: var(--accent);
+    color: var(--bg-main);
+    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);
+  }
+
+  .workspace {
+    max-width: 1320px;
+    width: 100%;
+    margin: 1.5rem auto;
+    padding: 0 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 1.75rem;
+    flex: 1;
+  }
+
+  @media (max-width: 960px) {
+    .workspace {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .desc {
+    color: var(--text-secondary);
+    font-size: 0.94rem;
+    line-height: 1.55;
+  }
+
+  .info-banner {
+    background: rgba(56, 189, 248, 0.1);
+    border-left: 4px solid var(--accent);
+    padding: 0.85rem 1rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-family: 'Consolas', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .control-panel {
+    background: rgba(7, 11, 20, 0.65);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .btn-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+  }
+
+  .btn-grid-6 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .ctrl-btn {
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 0.65rem 0.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ctrl-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+  }
+
+  .ctrl-btn.active {
+    background: var(--accent-orange);
+    color: var(--bg-main);
+    border-color: var(--accent-orange);
+    font-weight: 700;
+  }
+
+  .slider-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .slider-val {
+    color: var(--accent-orange);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    accent-color: var(--accent-orange);
+    cursor: pointer;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .metric-card {
+    background: rgba(7, 11, 20, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.85rem 0.5rem;
+    text-align: center;
+  }
+
+  .metric-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+  }
+
+  .metric-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .canvas-container {
+    background: #04070d;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    position: relative;
+  }
+
+  canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .caption {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span>Laboratorio Virtual de Física y Química</span>
+  </div>
+  <div class="nav-bar">
+    <button class="nav-btn active" id="tab-btn-1" onclick="switchTab(1)">1. Teoría Cinética y Estados</button>
+    <button class="nav-btn" id="tab-btn-2" onclick="switchTab(2)">2. Leyes de los Gases</button>
+    <button class="nav-btn" id="tab-btn-3" onclick="switchTab(3)">3. Cambios de Fase (Agua)</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <!-- COLUMNA IZQUIERDA: CONTROLES Y MÉTRICAS -->
+  <div class="card">
+    <div>
+      <h2 id="title-txt">Teoría Cinético-Molecular</h2>
+      <p class="desc" id="desc-txt" style="margin-top: 0.4rem;">
+        La temperatura absoluta mide la agitación térmica de las partículas. En el Cero Absoluto (0 K / -273 °C) cesa todo movimiento molecular y la presión cae a cero.
+      </p>
+    </div>
+
+    <div class="info-banner" id="banner-txt">
+      Estado Sólido: Red cristalina con fuerzas de cohesión intensas.
+    </div>
+
+    <!-- CONTROLES PESTAÑA 1 -->
+    <div class="control-panel" id="panel-t1">
+      <div class="slider-row"><span>Estado de Agregación:</span></div>
+      <div class="btn-grid">
+        <button class="ctrl-btn active" id="btn-solid" onclick="setT1State('solid')">🧊 Sólido</button>
+        <button class="ctrl-btn" id="btn-liquid" onclick="setT1State('liquid')">💧 Líquido</button>
+        <button class="ctrl-btn" id="btn-gas" onclick="setT1State('gas')">💨 Gas</button>
+      </div>
+      <div class="slider-row" style="margin-top: 0.4rem;">
+        <span>Temperatura Absoluta (T):</span>
+        <span class="slider-val" id="val-t1-temp">300 K (27 °C)</span>
+      </div>
+      <input type="range" id="sl-t1-temp" min="0" max="600" step="1" value="300" oninput="updateT1Temp(this.value)">
+    </div>
+
+    <!-- CONTROLES PESTAÑA 2 -->
+    <div class="control-panel" id="panel-t2" style="display: none;">
+      <div class="slider-row"><span>Seleccionar Ley de los Gases:</span></div>
+      <div class="btn-grid">
+        <button class="ctrl-btn active" id="btn-boyle" onclick="setT2Law('boyle')">Boyle (T cte)</button>
+        <button class="ctrl-btn" id="btn-charles" onclick="setT2Law('charles')">Charles (P cte)</button>
+        <button class="ctrl-btn" id="btn-gay" onclick="setT2Law('gay')">Gay-Lussac (V cte)</button>
+      </div>
+      <div class="slider-row" style="margin-top: 0.4rem;">
+        <span id="lbl-t2-slider">Volumen del Émbolo (V):</span>
+        <span class="slider-val" id="val-t2-slider">3.0 L</span>
+      </div>
+      <input type="range" id="sl-t2" min="1.0" max="5.0" step="0.1" value="3.0" oninput="updateT2Value(this.value)">
+    </div>
+
+    <!-- CONTROLES PESTAÑA 3 -->
+    <div class="control-panel" id="panel-t3" style="display: none;">
+      <div class="slider-row">
+        <span>Temperatura del Agua:</span>
+        <span class="slider-val" id="val-t3-temp">25 °C (298 K)</span>
+      </div>
+      <input type="range" id="sl-t3-temp" min="-273" max="140" step="1" value="25" oninput="updateT3Temp(this.value)">
+      <div class="slider-row" style="margin-top: 0.2rem;"><span>Accesos Rápidos de Fase:</span></div>
+      <div class="btn-grid-6">
+        <button class="ctrl-btn" onclick="setQuickWater(-273)">0 K (-273°C)</button>
+        <button class="ctrl-btn" onclick="setQuickWater(-20)">Hielo (-20°C)</button>
+        <button class="ctrl-btn" onclick="setQuickWater(0)">Fusión (0°C)</button>
+        <button class="ctrl-btn" onclick="setQuickWater(25)">Agua (25°C)</button>
+        <button class="ctrl-btn" onclick="setQuickWater(100)">Ebullición (100°C)</button>
+        <button class="ctrl-btn" onclick="setQuickWater(120)">Vapor (120°C)</button>
+      </div>
+    </div>
+
+    <!-- TARJETAS DE MÉTRICAS -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label" id="m1-lbl">Colisiones / s</div>
+        <div class="metric-val" id="m1-val">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label" id="m2-lbl">Velocidad Media</div>
+        <div class="metric-val" id="m2-val" style="color: var(--accent-orange);">0 m/s</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label" id="m3-lbl">Temperatura</div>
+        <div class="metric-val" id="m3-val" style="color: var(--accent-green);">300 K</div>
+      </div>
+    </div>
+
+    <p class="caption" id="footer-hint">
+      Motor físico con colisiones elásticas 2D partícula-partícula y repulsión de volumen para evitar alineaciones irreales.
+    </p>
+  </div>
+
+  <!-- COLUMNA DERECHA: LIENZO DE SIMULACIÓN -->
+  <div class="card" style="justify-content: center;">
+    <div class="canvas-container">
+      <canvas id="simCanvas" width="500" height="430"></canvas>
+    </div>
+    <p class="caption" id="canvas-caption">
+      Visualización microscópica interactiva en tiempo real.
+    </p>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+
+// Estado Global de la Simulación
+let activeTab = 1;
+
+// Pestaña 1
+let t1State = 'solid';
+let t1TempK = 300;
+
+// Pestaña 2
+let t2Law = 'boyle';
+let t2VolL = 3.0;   // 1.0 L a 5.0 L
+let t2TempK = 300;  // 0 K a 600 K
+let t2PressAtm = 1.0;
+
+// Pestaña 3
+let t3TempC = 25;   // -273 °C a 140 °C
+
+// Contadores de colisiones contra las paredes
+let wallHitsAccum = 0;
+let frameCounter = 0;
+let displayedHitsPerSec = 0;
+
+// Inicializar conjunto de 36 partículas con vectores 2D bien distribuidos
+const NUM_PARTICLES = 36;
+const particles = [];
+
+function initParticles(boxLeft, boxRight, boxTop, boxBottom) {
+  particles.length = 0;
+  const cols = 6;
+  const rows = 6;
+  const startX = boxLeft + 52;
+  const startY = boxBottom - 185;
+  const spacingX = 42;
+  const spacingY = 32;
+
+  for (let i = 0; i < NUM_PARTICLES; i++) {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    // Desplazamiento hexagonal para evitar columnas rígidas artificiales
+    const hexOffset = (r % 2 === 0) ? -8 : 8;
+    const bx = startX + c * spacingX + hexOffset;
+    const by = startY + r * spacingY;
+
+    // Ángulo aleatorio puro en 2D evitando ángulos de 0° o 90° exactos
+    let angle = Math.random() * Math.PI * 2;
+    if (Math.abs(Math.cos(angle)) < 0.15) angle += 0.35;
+    if (Math.abs(Math.sin(angle)) < 0.15) angle += 0.35;
+
+    particles.push({
+      x: bx,
+      y: by,
+      baseX: bx,
+      baseY: by,
+      ux: Math.cos(angle), // Vector dirección unitario X
+      uy: Math.sin(angle), // Vector dirección unitario Y
+      vx: 0,
+      vy: 0,
+      radius: 7,
+      phaseOffset: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+initParticles(85, 435, 45, 385);
+
+// Redistribuir posiciones aleatorias para el gas
+function scatterForGas(left, right, top, bottom) {
+  particles.forEach((p) => {
+    p.x = left + p.radius + 10 + Math.random() * (right - left - p.radius * 2 - 20);
+    p.y = top + p.radius + 10 + Math.random() * (bottom - top - p.radius * 2 - 20);
+    let ang = Math.random() * Math.PI * 2;
+    p.ux = Math.cos(ang);
+    p.uy = Math.sin(ang);
+  });
+}
+
+// Cambio de Pestaña
+function switchTab(tabNum) {
+  activeTab = tabNum;
+  document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+    btn.classList.toggle('active', idx + 1 === tabNum);
+  });
+
+  document.getElementById('panel-t1').style.display = tabNum === 1 ? 'flex' : 'none';
+  document.getElementById('panel-t2').style.display = tabNum === 2 ? 'flex' : 'none';
+  document.getElementById('panel-t3').style.display = tabNum === 3 ? 'flex' : 'none';
+
+  wallHitsAccum = 0;
+  displayedHitsPerSec = 0;
+
+  if (tabNum === 1) {
+    document.getElementById('title-txt').textContent = "Teoría Cinético-Molecular";
+    document.getElementById('desc-txt').textContent = "La temperatura absoluta mide la energía cinética media de las partículas. Al bajar hasta 0 K (-273 °C), el movimiento cesa por completo.";
+    setT1State(t1State);
+    updateT1Temp(t1TempK);
+  } else if (tabNum === 2) {
+    setT2Law(t2Law);
+  } else if (tabNum === 3) {
+    document.getElementById('title-txt').textContent = "Cambios de Fase del Agua (H₂O)";
+    document.getElementById('desc-txt').textContent = "Simulación térmica desde el Cero Absoluto (-273 °C) hasta el vapor sobrecalentado (+140 °C), mostrando las transiciones de fusión y ebullición.";
+    updateT3Temp(t3TempC);
+  }
+}
+
+// --- Controles Pestaña 1 ---
+function setT1State(state) {
+  t1State = state;
+  document.getElementById('btn-solid').classList.toggle('active', state === 'solid');
+  document.getElementById('btn-liquid').classList.toggle('active', state === 'liquid');
+  document.getElementById('btn-gas').classList.toggle('active', state === 'gas');
+
+  const banner = document.getElementById('banner-txt');
+  if (state === 'solid') {
+    banner.textContent = "Estado Sólido: Red cristalina ordenada. Las partículas vibran en torno a posiciones fijas.";
+    initParticles(85, 435, 55, 385);
+  } else if (state === 'liquid') {
+    banner.textContent = "Estado Líquido: Volumen propio e incompresible. Las partículas fluyen apiladas sin colapsar en línea.";
+  } else {
+    banner.textContent = "Estado Gaseoso: Ocupa todo el recipiente. Choques elásticos 2D en todas las direcciones.";
+    scatterForGas(85, 435, 65, 385);
+  }
+}
+
+function updateT1Temp(val) {
+  t1TempK = parseInt(val, 10);
+  const celsius = t1TempK - 273;
+  document.getElementById('val-t1-temp').textContent = `${t1TempK} K (${celsius} °C)`;
+}
+
+// --- Controles Pestaña 2 ---
+function setT2Law(law) {
+  t2Law = law;
+  document.getElementById('btn-boyle').classList.toggle('active', law === 'boyle');
+  document.getElementById('btn-charles').classList.toggle('active', law === 'charles');
+  document.getElementById('btn-gay').classList.toggle('active', law === 'gay');
+
+  const sl = document.getElementById('sl-t2');
+  const lbl = document.getElementById('lbl-t2-slider');
+  const title = document.getElementById('title-txt');
+  const desc = document.getElementById('desc-txt');
+  const banner = document.getElementById('banner-txt');
+
+  if (law === 'boyle') {
+    title.textContent = "Ley de Boyle-Mariotte (Proceso Isotermo)";
+    desc.textContent = "A temperatura constante (300 K), la presión de un gas es inversamente proporcional a su volumen en Litros.";
+    banner.textContent = "P₁ · V₁ = P₂ · V₂   (Temperatura constante T = 300 K)";
+    lbl.textContent = "Volumen del Émbolo (Litros):";
+    sl.min = "1.0";
+    sl.max = "5.0";
+    sl.step = "0.1";
+    sl.value = "3.0";
+    t2TempK = 300;
+    updateT2Value(3.0);
+  } else if (law === 'charles') {
+    title.textContent = "Ley de Charles (Proceso Isobárico)";
+    desc.textContent = "A presión constante (1.00 atm), el volumen es directamente proporcional a la temperatura absoluta. A 0 K el volumen colapsa.";
+    banner.textContent = "V₁ / T₁ = V₂ / T₂   (Presión constante P = 1.00 atm)";
+    lbl.textContent = "Temperatura Absoluta (K):";
+    sl.min = "0";
+    sl.max = "500";
+    sl.step = "1";
+    sl.value = "300";
+    updateT2Value(300);
+  } else if (law === 'gay') {
+    title.textContent = "Ley de Gay-Lussac (Proceso Isócoro)";
+    desc.textContent = "A volumen constante (3.0 L bloqueados), la presión es directamente proporcional a la temperatura. A 0 K la presión cae a 0.00 atm.";
+    banner.textContent = "P₁ / T₁ = P₂ / T₂   (Volumen fijo V = 3.0 L)";
+    lbl.textContent = "Temperatura Absoluta (K):";
+    sl.min = "0";
+    sl.max = "600";
+    sl.step = "1";
+    sl.value = "300";
+    updateT2Value(300);
+  }
+  scatterForGas(95, 425, 160, 380);
+}
+
+function updateT2Value(val) {
+  const num = parseFloat(val);
+  if (t2Law === 'boyle') {
+    t2VolL = num;
+    t2TempK = 300;
+    t2PressAtm = +(3.0 / t2VolL).toFixed(2);
+    document.getElementById('val-t2-slider').textContent = `${t2VolL.toFixed(1)} L`;
+  } else if (t2Law === 'charles') {
+    t2TempK = Math.round(num);
+    if (t2TempK === 0) {
+      t2PressAtm = 0.00;
+      t2VolL = 0.6; // Volumen mínimo residual del contenedor a 0 K
+    } else {
+      t2PressAtm = 1.00;
+      t2VolL = Math.max(0.6, +(t2TempK / 100).toFixed(2));
+    }
+    document.getElementById('val-t2-slider').textContent = `${t2TempK} K (${t2TempK - 273} °C)`;
+  } else if (t2Law === 'gay') {
+    t2TempK = Math.round(num);
+    t2VolL = 3.0;
+    t2PressAtm = +(t2TempK / 300).toFixed(2);
+    document.getElementById('val-t2-slider').textContent = `${t2TempK} K (${t2TempK - 273} °C)`;
+  }
+}
+
+// --- Controles Pestaña 3 ---
+function setQuickWater(tempC) {
+  const sl = document.getElementById('sl-t3-temp');
+  sl.value = tempC;
+  updateT3Temp(tempC);
+}
+
+function updateT3Temp(val) {
+  t3TempC = parseInt(val, 10);
+  const kelvin = t3TempC + 273;
+  document.getElementById('val-t3-temp').textContent = `${t3TempC} °C (${kelvin} K)`;
+
+  const banner = document.getElementById('banner-txt');
+  if (kelvin === 0) {
+    banner.textContent = "Cero Absoluto (0 K / -273 °C): Red cristalina de hielo completamente inmóvil (0 m/s).";
+  } else if (t3TempC < 0) {
+    banner.textContent = "Fase Sólida (Hielo < 0 °C): Red hexagonal con puentes de hidrógeno rígidos.";
+  } else if (t3TempC === 0) {
+    banner.textContent = "Fusión (0 °C / 273 K): Transición sólido-líquido. La energía rompe la red cristalina.";
+  } else if (t3TempC > 0 && t3TempC < 100) {
+    banner.textContent = "Fase Líquida (0 °C a 100 °C): Moléculas de H₂O fluyendo con volumen propio y cohesión.";
+  } else if (t3TempC === 100) {
+    banner.textContent = "Ebullición (100 °C / 373 K): Vaporización rápida. Las moléculas vencen las fuerzas atractivas.";
+  } else {
+    banner.textContent = "Fase Gaseosa (Vapor > 100 °C): Moléculas de agua libres chocando elásticamente por todo el recinto.";
+  }
+}
+
+// --- MOTOR FÍSICO 2D: Colisiones Elásticas y Repulsión Líquida ---
+function resolveParticleCollisions(mode, speedScalar) {
+  for (let i = 0; i < NUM_PARTICLES; i++) {
+    for (let j = i + 1; j < NUM_PARTICLES; j++) {
+      const p1 = particles[i];
+      const p2 = particles[j];
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = (mode === 'liquid') ? (p1.radius + p2.radius + 4) : (p1.radius + p2.radius);
+
+      if (dist > 0 && dist < minDist) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const overlap = minDist - dist;
+
+        // Separar partículas inmediatamente para que NUNCA se superpongan ni formen una sola línea
+        p1.x -= nx * overlap * 0.52;
+        p1.y -= ny * overlap * 0.52;
+        p2.x += nx * overlap * 0.52;
+        p2.y += ny * overlap * 0.52;
+
+        if (speedScalar > 0) {
+          // Choque elástico 2D entre esferas de igual masa
+          const kx = p1.ux - p2.ux;
+          const ky = p1.uy - p2.uy;
+          const pDot = nx * kx + ny * ky;
+
+          if (pDot > 0) {
+            p1.ux -= pDot * nx;
+            p1.uy -= pDot * ny;
+            p2.ux += pDot * nx;
+            p2.uy += pDot * ny;
+
+            // Normalizar vectores unitarios para mantener la energía térmica exacta
+            const m1 = Math.hypot(p1.ux, p1.uy) || 1;
+            const m2 = Math.hypot(p2.ux, p2.uy) || 1;
+            p1.ux /= m1; p1.uy /= m1;
+            p2.ux /= m2; p2.uy /= m2;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Bucle Principal de Renderizado y Física
+function stepSimulation() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Dimensiones del recipiente según pestaña
+  const boxLeft = 95;
+  const boxRight = 445;
+  const boxBottom = (activeTab === 3) ? 265 : 385;
+  const maxHeight = (activeTab === 3) ? 225 : 310;
+
+  let currentVol = 4.2;
+  if (activeTab === 2) currentVol = t2VolL;
+
+  const boxTop = (activeTab === 3)
+    ? 35
+    : (boxBottom - (currentVol / 5.0) * maxHeight);
+
+  // Determinar Temperatura actual (K) y Estado Físico
+  let currentTempK = 300;
+  let currentMode = 'gas';
+
+  if (activeTab === 1) {
+    currentTempK = t1TempK;
+    currentMode = t1State;
+  } else if (activeTab === 2) {
+    currentTempK = t2TempK;
+    currentMode = 'gas';
+  } else if (activeTab === 3) {
+    currentTempK = t3TempC + 273;
+    if (t3TempC < 0) currentMode = 'solid';
+    else if (t3TempC === 0) currentMode = 'melting';
+    else if (t3TempC < 100) currentMode = 'liquid';
+    else if (t3TempC === 100) currentMode = 'boiling';
+    else currentMode = 'gas';
+  }
+
+  // Factor de velocidad proporcional a sqrt(T). En 0 K es estrictamente 0.
+  const speedScalar = (currentTempK <= 0) ? 0 : Math.sqrt(currentTempK / 300) * 3.1;
+
+  // Dibujar Escala en Litros y Émbolo (Pestañas 1 y 2)
+  if (activeTab !== 3) {
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 12px Segoe UI, sans-serif';
+    for (let l = 1; l <= 5; l++) {
+      const yMark = boxBottom - (l / 5.0) * maxHeight;
+      ctx.fillText(`${l}.0 L`, 45, yMark + 4);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(85, yMark);
+      ctx.lineTo(95, yMark);
+      ctx.stroke();
+    }
+
+    // Vástago y cabeza del émbolo
+    ctx.fillStyle = '#475569';
+    ctx.fillRect((boxLeft + boxRight) / 2 - 9, 12, 18, Math.max(0, boxTop - 24));
+    ctx.fillStyle = (activeTab === 2 && t2Law === 'gay') ? '#64748b' : '#f97316';
+    ctx.fillRect(boxLeft + 2, boxTop - 13, (boxRight - boxLeft) - 4, 13);
+  }
+
+  // Dibujar Paredes del Recipiente
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(boxLeft, boxTop, boxRight - boxLeft, boxBottom - boxTop);
+
+  // Configurar posiciones base de la red cristalina para estado Sólido
+  if (currentMode === 'solid' || currentMode === 'melting') {
+    const cols = 6;
+    const startX = boxLeft + 58;
+    const startY = boxBottom - 165;
+    particles.forEach((p, idx) => {
+      const c = idx % cols;
+      const r = Math.floor(idx / cols);
+      const hex = (r % 2 === 0) ? -7 : 7;
+      p.baseX = startX + c * 44 + hex;
+      p.baseY = startY + r * 28;
+    });
+
+    // Dibujar enlaces intermoleculares de la red cristalina
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < NUM_PARTICLES; i++) {
+      for (let j = i + 1; j < NUM_PARTICLES; j++) {
+        const d = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+        if (d < 52) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // Actualizar física de cada partícula
+  let hitsThisFrame = 0;
+  const timeNow = performance.now() * 0.018;
+
+  particles.forEach((p, idx) => {
+    if (currentTempK <= 0) {
+      // Cero Absoluto Real (0 K): Inmovilidad total
+      p.vx = 0;
+      p.vy = 0;
+      if (currentMode === 'solid') {
+        p.x = p.baseX;
+        p.y = p.baseY;
+      }
+    } else if (currentMode === 'solid') {
+      // Vibración armónica 2D alrededor de su nodo cristalino
+      const amp = Math.min(7.5, speedScalar * 1.45);
+      p.x = p.baseX + Math.sin(timeNow * speedScalar + p.phaseOffset) * amp;
+      p.y = p.baseY + Math.cos(timeNow * 1.15 * speedScalar + idx) * amp;
+    } else if (currentMode === 'melting') {
+      // Mitad vibrando en red, mitad fluyendo como líquido
+      if (idx % 2 === 0) {
+        p.x = p.baseX + Math.sin(timeNow * 1.5 + idx) * 4.5;
+        p.y = p.baseY + Math.cos(timeNow * 1.5 + idx) * 4.5;
+      } else {
+        p.uy += 0.05; // Gravedad suave
+        const mag = Math.hypot(p.ux, p.uy) || 1;
+        p.ux /= mag; p.uy /= mag;
+        p.x += p.ux * speedScalar * 0.65;
+        p.y += p.uy * speedScalar * 0.65;
+      }
+    } else if (currentMode === 'liquid') {
+      // Estado Líquido: Movimiento fluido con gravedad + agitación térmica lateral para apilarse en 3D/2D
+      p.uy += 0.045;
+      p.ux += (Math.random() - 0.5) * 0.18;
+      const mag = Math.hypot(p.ux, p.uy) || 1;
+      p.ux /= mag;
+      p.uy /= mag;
+
+      const liqSpeed = speedScalar * 0.72;
+      p.x += p.ux * liqSpeed;
+      p.y += p.uy * liqSpeed;
+
+      // Techo de superficie libre del líquido para mantenerlas juntas en la mitad inferior
+      const liquidSurfaceY = boxBottom - 135;
+      if (p.y < liquidSurfaceY) {
+        p.y = liquidSurfaceY;
+        p.uy = Math.abs(p.uy);
+      }
+    } else {
+      // Estado Gas o Ebullición: Movimiento balístico rectilíneo en todo el volumen 2D
+      const gasSpeed = speedScalar * 1.35;
+      p.x += p.ux * gasSpeed;
+      p.y += p.uy * gasSpeed;
+    }
+
+    // Colisiones elásticas contra las paredes del contenedor
+    if (currentMode !== 'solid') {
+      if (p.x - p.radius < boxLeft) {
+        p.x = boxLeft + p.radius;
+        p.ux = Math.abs(p.ux);
+        if (currentTempK > 0) hitsThisFrame++;
+      } else if (p.x + p.radius > boxRight) {
+        p.x = boxRight - p.radius;
+        p.ux = -Math.abs(p.ux);
+        if (currentTempK > 0) hitsThisFrame++;
+      }
+
+      if (p.y - p.radius < boxTop) {
+        p.y = boxTop + p.radius;
+        p.uy = Math.abs(p.uy);
+        if (currentTempK > 0) hitsThisFrame++;
+      } else if (p.y + p.radius > boxBottom) {
+        p.y = boxBottom - p.radius;
+        p.uy = -Math.abs(p.uy);
+        // Pequeña dispersión angular en el fondo para el líquido para impedir filas horizontales
+        if (currentMode === 'liquid') {
+          p.ux += (Math.random() - 0.5) * 0.4;
+          const m = Math.hypot(p.ux, p.uy) || 1;
+          p.ux /= m; p.uy /= m;
+        }
+        if (currentTempK > 0) hitsThisFrame++;
+      }
+    }
+  });
+
+  // Resolver colisiones bola-bola y repulsión de volumen (evita que formen líneas o colapsen)
+  if (currentMode !== 'solid') {
+    resolveParticleCollisions(currentMode, speedScalar);
+    // Segunda pasada en líquido para garantizar empaquetamiento volumétrico limpio
+    if (currentMode === 'liquid') {
+      resolveParticleCollisions('liquid', speedScalar);
+    }
+  }
+
+  // Dibujar partículas en el Canvas
+  particles.forEach((p) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    if (currentTempK === 0) {
+      ctx.fillStyle = '#64748b'; // Gris azulado congelado en 0 K
+    } else if (currentMode === 'gas' || currentMode === 'boiling') {
+      ctx.fillStyle = '#f97316';
+    } else {
+      ctx.fillStyle = '#38bdf8';
+    }
+    ctx.fill();
+
+    // Si estamos en la Pestaña 3 (Agua), dibujar los 2 átomos de Hidrógeno blancos (H2O)
+    if (activeTab === 3) {
+      ctx.beginPath();
+      ctx.arc(p.x - 4.5, p.y - 4, 2.4, 0, Math.PI * 2);
+      ctx.arc(p.x + 4.5, p.y - 4, 2.4, 0, Math.PI * 2);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fill();
+    }
+  });
+
+  // En la Pestaña 3, dibujar la Gráfica de la Curva de Calentamiento abajo
+  if (activeTab === 3) {
+    drawHeatingCurve();
+  }
+
+  // Actualizar métricas cada 18 frames (~3 veces por segundo)
+  wallHitsAccum += hitsThisFrame;
+  frameCounter++;
+  if (frameCounter >= 18) {
+    displayedHitsPerSec = (currentTempK === 0 || currentMode === 'solid')
+      ? 0
+      : Math.round(wallHitsAccum * (60 / 18));
+    wallHitsAccum = 0;
+    frameCounter = 0;
+    updateMetricsUI(currentTempK, currentMode);
+  }
+
+  requestAnimationFrame(stepSimulation);
+}
+
+// Dibujar la curva de calentamiento dinámica en la parte inferior del Canvas (Pestaña 3)
+function drawHeatingCurve() {
+  const gxLeft = 95, gxRight = 445, gyBottom = 405, gyTop = 295;
+
+  // Ejes
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(gxLeft, gyTop);
+  ctx.lineTo(gxLeft, gyBottom);
+  ctx.lineTo(gxRight, gyBottom);
+  ctx.stroke();
+
+  // Tramos de la curva: -273°C -> 0°C -> Meseta Fusión -> 100°C -> Meseta Ebullición -> 140°C
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(gxLeft, gyBottom - 5);          // 0 K (-273°C)
+  ctx.lineTo(175, gyBottom - 45);            // Subida hielo hasta 0°C
+  ctx.lineTo(225, gyBottom - 45);            // Meseta Fusión (0°C)
+  ctx.lineTo(315, gyBottom - 80);            // Subida líquido hasta 100°C
+  ctx.lineTo(375, gyBottom - 80);            // Meseta Ebullición (100°C)
+  ctx.lineTo(gxRight - 10, gyBottom - 102);  // Vapor (>100°C)
+  ctx.stroke();
+
+  // Calcular posición del marcador según t3TempC (-273 a 140)
+  let mx = gxLeft, my = gyBottom - 5;
+  if (t3TempC < 0) {
+    const tNorm = (t3TempC + 273) / 273; // 0 a 1
+    mx = gxLeft + tNorm * (175 - gxLeft);
+    my = (gyBottom - 5) - tNorm * 40;
+  } else if (t3TempC === 0) {
+    mx = 200;
+    my = gyBottom - 45;
+  } else if (t3TempC > 0 && t3TempC < 100) {
+    const tNorm = t3TempC / 100;
+    mx = 225 + tNorm * (315 - 225);
+    my = (gyBottom - 45) - tNorm * 35;
+  } else if (t3TempC === 100) {
+    mx = 345;
+    my = gyBottom - 80;
+  } else {
+    const tNorm = (t3TempC - 100) / 40;
+    mx = 375 + tNorm * (gxRight - 10 - 375);
+    my = (gyBottom - 80) - tNorm * 22;
+  }
+
+  // Punto marcador brillante
+  ctx.beginPath();
+  ctx.arc(mx, my, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#f97316';
+  ctx.fill();
+  ctx.strokeStyle = '#f8fafc';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Etiquetas de la gráfica
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '11px Segoe UI, sans-serif';
+  ctx.fillText('0 K', gxLeft + 4, gyBottom - 10);
+  ctx.fillText('Fusión (0°C)', 170, gyBottom - 52);
+  ctx.fillText('Ebullición (100°C)', 305, gyBottom - 87);
+  ctx.fillText('Calor suministrado (Q) →', 240, gyBottom + 16);
+}
+
+// Actualizar tarjetas numéricas inferiores
+function updateMetricsUI(tempK, mode) {
+  // Velocidad térmica media real (v = 0 m/s en 0 K)
+  const avgSpeedMs = (tempK <= 0) ? 0 : Math.round(Math.sqrt(tempK / 300) * 475);
+
+  if (activeTab === 1) {
+    document.getElementById('m1-lbl').textContent = "Colisiones / s";
+    document.getElementById('m1-val').textContent = displayedHitsPerSec;
+    document.getElementById('m2-lbl').textContent = "Velocidad Media";
+    document.getElementById('m2-val').textContent = `${avgSpeedMs} m/s`;
+    document.getElementById('m3-lbl').textContent = "Temperatura";
+    document.getElementById('m3-val').textContent = `${t1TempK} K`;
+  } else if (activeTab === 2) {
+    document.getElementById('m1-lbl').textContent = "Presión (P)";
+    document.getElementById('m1-val').textContent = `${t2PressAtm.toFixed(2)} atm`;
+    document.getElementById('m2-lbl').textContent = "Volumen (V)";
+    document.getElementById('m2-val').textContent = `${t2VolL.toFixed(1)} L`;
+    document.getElementById('m3-lbl').textContent = "Temperatura (T)";
+    document.getElementById('m3-val').textContent = `${t2TempK} K`;
+  } else if (activeTab === 3) {
+    let phaseName = "Líquido";
+    if (tempK === 0) phaseName = "0 K (Inmóvil)";
+    else if (t3TempC < 0) phaseName = "Sólido (Hielo)";
+    else if (t3TempC === 0) phaseName = "Fusión";
+    else if (t3TempC === 100) phaseName = "Ebullición";
+    else if (t3TempC > 100) phaseName = "Gas (Vapor)";
+
+    document.getElementById('m1-lbl').textContent = "Fase Actual";
+    document.getElementById('m1-val').textContent = phaseName;
+    document.getElementById('m2-lbl').textContent = "Velocidad Media";
+    document.getElementById('m2-val').textContent = `${avgSpeedMs} m/s`;
+    document.getElementById('m3-lbl').textContent = "Temp. Absoluta";
+    document.getElementById('m3-val').textContent = `${tempK} K`;
+  }
+}
+
+// Iniciar bucle de animación
+requestAnimationFrame(stepSimulation);
+</script>
+</body>
+</html>
